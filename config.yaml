@@ -1,0 +1,10 @@
+executors:
+- first:
+  type: "cmd"
+  cmd: ""
+  ssh: {
+    user: ""
+    addr: ""
+    key: ""
+  }
+
