@@ -1,46 +1,42 @@
-use std::{path::Path, net::SocketAddr, time::Duration, sync::{Arc}, io::Write, iter};
-
-use futures::{Stream, channel::mpsc::unbounded, stream, lock::Mutex, StreamExt};
-use russh::{client, Disconnect};
+use std::{path::Path, net::SocketAddr, time::Duration, sync::Arc};
+use futures::{Stream, channel::mpsc::unbounded, lock::Mutex, StreamExt};
+use russh::client;
 use russh_keys::{key::PublicKey, load_secret_key};
 use anyhow::{Result};
-
+use serde::Deserialize;
 
 use super::{CmdExecutor, CmdStream};
 
+
+#[derive(Deserialize)]
 pub struct SshConfig {
     pub key_path: String,
     pub user: String,
     pub addr: String,
-    pub cmd: String,
 }
 
 pub struct SshExecutor {
     session: Arc<Mutex<Session>>,
-    cmd: String,
 }
 
 impl SshExecutor {
-
-    pub async fn new(config: SshConfig) -> Result<Self> {
-        let user = config.user;
+    pub async fn new(config: &SshConfig) -> Result<Self> {
+        let user = config.user.clone();
         let key_path = Path::new(&config.key_path);
         let addr: SocketAddr = config.addr.parse()?;
         let session = Session::connect(key_path, user, addr).await?;
-
         Ok(Self {
             session: Arc::new(Mutex::new(session)),
-            cmd: config.cmd,
         })
     }
 }
 
 impl CmdExecutor for SshExecutor {
-    fn execute(&self) -> CmdStream {
+    fn execute(&self, cmd: &str) -> CmdStream {
         let (sender, recv) = unbounded();
 
         let session_mutex = self.session.clone();
-        let cmd = self.cmd.clone();
+        let cmd = cmd.to_string().clone();
 
         tokio::spawn(async move {
             let mut session = session_mutex.lock().await;

@@ -12,3 +12,6 @@ russh = { version = "0.34.0", features = ["openssl"] }
 russh-keys = { version = "0.22.0", features = ["openssl"] }
 anyhow = "1.0.66"
 tokio = { version = "1", features = ["full"] }
+yaml-rust = "0.4.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
