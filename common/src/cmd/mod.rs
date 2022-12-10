@@ -5,11 +5,12 @@ use futures::Stream;
 use serde::Deserialize;
 use serde_yaml::Value;
 
-use self::{ssh::{SshExecutor, SshConfig}, tail::{TailExecutor, TailConfig}, raw::{RawExecutor, RawConfig}};
+use self::{ssh::{SshExecutor, SshConfig}, tail::{TailExecutor, TailConfig}, raw::{RawExecutor, RawConfig}, cat::{CatExecutor, CatConfig}};
 
 pub mod ssh;
 pub mod tail;
 pub mod raw;
+pub mod cat;
 
 type CmdStream = Box<dyn Stream<Item = Result<String>> + Unpin>;
 
@@ -23,6 +24,8 @@ pub enum ExecutorKind {
     Raw,
     #[serde(rename = "tail")]
     Tail,
+    #[serde(rename = "cat")]
+    Cat
 }
 
 #[derive(Deserialize)]
@@ -63,6 +66,7 @@ impl CmdExecutorFactory {
         let executor: Box<dyn CmdExecutor> = match config.kind {
             ExecutorKind::Raw => Box::new(self.raw_executor(value).await?),
             ExecutorKind::Tail => Box::new(self.tail_executor(value).await?),
+            ExecutorKind::Cat => Box::new(self.cat_executor(value).await?),
         };
 
         Ok(executor)
@@ -89,6 +93,15 @@ impl CmdExecutorFactory {
         let ssh = self.ssh_executor(&tail_config.ssh_config).await?;
         Ok(TailExecutor::new(
             tail_config.file.clone(), 
+            ssh
+        ))
+    }
+
+    async fn cat_executor(&self, config: Value) -> Result<CatExecutor> {
+        let cat_config: CatConfig = serde_yaml::from_value(config)?;
+        let ssh = self.ssh_executor(&cat_config.ssh_config).await?;
+        Ok(CatExecutor::new(
+            cat_config.file.clone(), 
             ssh
         ))
     }

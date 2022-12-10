@@ -17,10 +17,14 @@ impl RawExecutor {
     pub fn new(cmd: String, ssh: SshExecutor) -> Self {
         Self { cmd, ssh }
     }
+
+    fn format_cmd(&self, cmd: &str) -> String {
+        format!("{} {}", self.cmd, cmd)
+    }
 }
 
 impl CmdExecutor for RawExecutor {
-    fn execute(&self, _cmd: &str) -> super::CmdStream {
-        self.ssh.execute(&self.cmd)
+    fn execute(&self, cmd: &str) -> super::CmdStream {
+        self.ssh.execute(&self.format_cmd(cmd))
     }
 }

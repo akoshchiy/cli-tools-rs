@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+    "common",
     "rtail",
-    "common"
+    "rcat"
 ]

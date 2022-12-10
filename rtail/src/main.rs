@@ -1,7 +1,6 @@
-use std::{io::{stdout, Write}, env, fs::File};
+use std::env;
 use clap::{command, Arg, ArgAction, ArgMatches};
-use common::cmd::{CmdExecutorFactory, RootConfig};
-use futures::StreamExt;
+use common::run::run_executor;
 
 #[tokio::main]
 async fn main() {
@@ -18,20 +17,8 @@ async fn main() {
     let tail_cmd = format!("{} {}", number_flag, follow_flag);
 
     let config_path = env::var("RTAIL_CONFIG").expect("Undefined config env variable: RTAIL_CONFIG");
-    let config_file = File::open(config_path).unwrap();
-    let config: RootConfig = serde_yaml::from_reader(config_file).unwrap();
 
-    let factory = CmdExecutorFactory::new(config);
-    let executor = factory.create(executor_id).await.unwrap();
-
-    let mut stream = executor.execute(&tail_cmd);
-
-    while let Some(out) = stream.next().await {
-        match out {
-            Ok(data) => stdout().write_all(data.as_bytes()).unwrap(),
-            Err(err) => { println!("{}", err) },
-        }
-    }
+    run_executor(executor_id, &tail_cmd, &config_path).await;
 }
 
 fn parse_number_flag(matches: &ArgMatches) -> String {
